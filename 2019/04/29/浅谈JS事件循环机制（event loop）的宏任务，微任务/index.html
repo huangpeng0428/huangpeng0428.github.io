@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="首先看一段代码123456789101112131415async function f1()&amp;#123;		await f2()		console.log(&apos;f1&apos;)	&amp;#125;// 			async function f2()&amp;#123;		console.log(&apos;f2&apos;)	&amp;#125;		console.log(&apos;正常1&apos;)	f1()	setTimeout(()=&amp;gt;&amp;#123;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈JS事件循环机制（event loop）的宏任务，微任务">
+<meta property="og:url" content="http://yoursite.com/2019/04/29/浅谈JS事件循环机制（event loop）的宏任务，微任务/index.html">
+<meta property="og:site_name" content="Polo">
+<meta property="og:description" content="首先看一段代码123456789101112131415async function f1()&amp;#123;		await f2()		console.log(&apos;f1&apos;)	&amp;#125;// 			async function f2()&amp;#123;		console.log(&apos;f2&apos;)	&amp;#125;		console.log(&apos;正常1&apos;)	f1()	setTimeout(()=&amp;gt;&amp;#123;">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-04-29T10:33:52.485Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈JS事件循环机制（event loop）的宏任务，微任务">
+<meta name="twitter:description" content="首先看一段代码123456789101112131415async function f1()&amp;#123;		await f2()		console.log(&apos;f1&apos;)	&amp;#125;// 			async function f2()&amp;#123;		console.log(&apos;f2&apos;)	&amp;#125;		console.log(&apos;正常1&apos;)	f1()	setTimeout(()=&amp;gt;&amp;#123;">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/04/29/浅谈JS事件循环机制（event loop）的宏任务，微任务/">
+
+
+
+
+
+  <title>浅谈JS事件循环机制（event loop）的宏任务，微任务 | Polo</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Polo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">记录而已</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-首页">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-关于">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-归档">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/29/浅谈JS事件循环机制（event loop）的宏任务，微任务/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="PoloHuang">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Polo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈JS事件循环机制（event loop）的宏任务，微任务</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-04-29T18:30:51+08:00">
+                2019-04-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>首先看一段代码<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">f1</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		<span class="keyword">await</span> f2()</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'f1'</span>)</span><br><span class="line">	&#125;</span><br><span class="line"><span class="comment">// 		</span></span><br><span class="line">	<span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">f2</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'f2'</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'正常1'</span>)</span><br><span class="line">	f1()</span><br><span class="line">	setTimeout(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'定时器'</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'正常2'</span>)</span><br></pre></td></tr></table></figure></p>
+<p>正确的打印顺序应该是：正常1，f2 ，正常2，f1，定时器</p>
+<h2 id="为什么会出现这样打印顺序呢"><a href="#为什么会出现这样打印顺序呢" class="headerlink" title="为什么会出现这样打印顺序呢"></a>为什么会出现这样打印顺序呢</h2><p>首先javascript是一门单线程语言，在最新的HTML5中提出了Web-Worker，但javascript是单线程这一核心仍未改变。既然js是单线程，那就像只有一个窗口的银行，客户需要排队一个一个办理业务，同理js任务也要一个一个顺序执行。如果一个任务耗时过长，那么后一个任务也必须等着。所以就出现了同步任务和异步任务。</p>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>除了广义的同步任务和异步任务，对任务可以进行更精细的区分<br>macro-task(宏任务)：包括整体代码script，setTimeout，setInterval<br>micro-task(微任务)：Promise，process.nextTick</p>
+<p><strong>宏任务</strong>：浏览器为了能够使得JS内部task与DOM任务能够有序的执行，会在一个task执行结束后，在下一个 task 执行开始前，对页面进行重新渲染 （task-&gt;渲染-&gt;task-&gt;…）<br>鼠标点击会触发一个事件回调，需要执行一个宏任务，然后解析HTMl</p>
+<p><strong>微任务</strong>：微任务通常来说就是需要在当前 同步任务 执行结束后立即执行的任务，比如对一系列动作做出反馈，或者是需要异步的执行任务而又不需要分配一个新的任务，这样便可以减小一点性能的开销。<br>既然我们清楚了概念，我们再看一遍代码<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">f1</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		<span class="keyword">await</span> f2()</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'f1'</span>)</span><br><span class="line">	&#125;</span><br><span class="line"><span class="comment">// 		</span></span><br><span class="line">	<span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">f2</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'f2'</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'正常1'</span>)</span><br><span class="line">	f1()</span><br><span class="line">	setTimeout(<span class="function"><span class="params">()</span>=&gt;</span>&#123;</span><br><span class="line">		<span class="built_in">console</span>.log(<span class="string">'定时器'</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="string">'正常2'</span>)</span><br></pre></td></tr></table></figure></p>
+<h2 id="执行顺序"><a href="#执行顺序" class="headerlink" title="执行顺序"></a>执行顺序</h2><p>首先我们进行正常的同步流程，打印出‘正常1’，接下来执行f1()函数，await后面的函数f2()会立即执行，所以会打印’f2’,继续执行同步代码打印‘正常2’，至此同步任务全部结束，开始执行异步任务微任务，await f2()等待f2()方法执行完之后打印出f1，最后执行宏任务setTimeout打印‘定时器’</p>
+<p>这就是为什么‘正常1’,正常2’会打印在‘f1’之前，因为所有微任务执行的时候，当前执行栈的代码必须已经执行完毕。‘f2’,’f1’会打印在‘定时器’之前是因为所有微任务总会在下一个宏任务之前全部执行完毕</p>
+<h2 id="附"><a href="#附" class="headerlink" title="附"></a>附</h2><p>该博客仅为记录开发中一些遇到的问题及解决方案，后续还会继续更新维护。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/23/实现一个简单的Vue插件/" rel="next" title="实现一个简单Vue插件">
+                <i class="fa fa-chevron-left"></i> 实现一个简单Vue插件
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">PoloHuang</p>
+              <p class="site-description motion-element" itemprop="description">一个Polo</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么会出现这样打印顺序呢"><span class="nav-number">1.</span> <span class="nav-text">为什么会出现这样打印顺序呢</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">2.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行顺序"><span class="nav-number">3.</span> <span class="nav-text">执行顺序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附"><span class="nav-number">4.</span> <span class="nav-text">附</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PoloHuang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
