@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="背景介绍项目中本人使用Vue作为主要技术栈，众所周知Vue主要用于开发单页面（SPA）应用的框架，具有良好的用户体验，用户不需要重新刷新页面，获取数据也是通过Axios异步获取，使得页面显示更为流畅。 分析既然这样，那我们就探究下单页SPA的实现原理吧：查阅相关资料，目前主要有两种实现方式1、监听hash的改变 2、H5新增的的history API Hash 在url中可以带上一个#,这个就相当">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈单页应用SPA实现原理">
+<meta property="og:url" content="http://yoursite.com/2019/05/27/spaTheory/index.html">
+<meta property="og:site_name" content="Polo">
+<meta property="og:description" content="背景介绍项目中本人使用Vue作为主要技术栈，众所周知Vue主要用于开发单页面（SPA）应用的框架，具有良好的用户体验，用户不需要重新刷新页面，获取数据也是通过Axios异步获取，使得页面显示更为流畅。 分析既然这样，那我们就探究下单页SPA的实现原理吧：查阅相关资料，目前主要有两种实现方式1、监听hash的改变 2、H5新增的的history API Hash 在url中可以带上一个#,这个就相当">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190311184846625.png">
+<meta property="og:updated_time" content="2019-03-16T03:35:08.560Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈单页应用SPA实现原理">
+<meta name="twitter:description" content="背景介绍项目中本人使用Vue作为主要技术栈，众所周知Vue主要用于开发单页面（SPA）应用的框架，具有良好的用户体验，用户不需要重新刷新页面，获取数据也是通过Axios异步获取，使得页面显示更为流畅。 分析既然这样，那我们就探究下单页SPA的实现原理吧：查阅相关资料，目前主要有两种实现方式1、监听hash的改变 2、H5新增的的history API Hash 在url中可以带上一个#,这个就相当">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190311184846625.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/05/27/spaTheory/">
+
+
+
+
+
+  <title>浅谈单页应用SPA实现原理 | Polo</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Polo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">记录而已</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-首页">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-关于">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-归档">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/05/27/spaTheory/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="PoloHuang">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Polo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈单页应用SPA实现原理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-05-27T15:10:02+08:00">
+                2019-05-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h1><p>项目中本人使用Vue作为主要技术栈，众所周知Vue主要用于开发单页面（SPA）应用的框架，具有良好的用户体验，用户不需要重新刷新页面，获取数据也是通过Axios异步获取，使得页面显示更为流畅。</p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>既然这样，那我们就探究下单页SPA的实现原理吧：查阅相关资料，目前主要有两种实现方式1、监听hash的改变 2、H5新增的的history API</p>
+<h2 id="Hash"><a href="#Hash" class="headerlink" title="Hash"></a>Hash</h2><p> 在url中可以带上一个#,这个就相当于是hash,比如下面的singlepage<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http:<span class="comment">//www.paul.com/index.html#singlepage</span></span><br></pre></td></tr></table></figure></p>
+<p>当url的片段标识符发生变化时，将触发window对象中的onhashchange事件， 然后做一些操作即可，在以下几种情况下会触发window的onhashchange事件</p>
+<ol>
+<li>直接更改浏览器地址，在最后面增加或改变#hash；</li>
+<li>通过改变location.href或location.hash的值；</li>
+<li>通过触发点击带锚点的链接；</li>
+<li>浏览器前进后退可能导致hash的变化，前提是两个网页地址中的hash值不同。</li>
+</ol>
+<p>我们可以拿到window.onhashchange中的方法回调,此时回调中有两个重要的属性如下，分别代表跳转前后的url地址</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;a href=<span class="string">"#singlepage"</span>&gt;click me&lt;<span class="regexp">/a&gt;</span></span><br><span class="line"><span class="regexp">&lt;script type="text/</span>javascript<span class="string">"&gt;</span></span><br><span class="line"><span class="string">  window.onhashchange = function(e)&#123;</span></span><br><span class="line"><span class="string">    console.log(e.oldURL);   //http://www.paul.com/index.html</span></span><br><span class="line"><span class="string">    console.log(e.newURL);   //http://www.paul.com/index.html#singlepage</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&lt;/script&gt;</span></span><br></pre></td></tr></table></figure>
+<p>现在我们只需要做一些简单的对比即可，那么我们如何拿到当前的hash值呢。其实呢也简单，我们都知道页面的location对象，其中就有一个我们需要的属性hash：<br><img src="https://img-blog.csdnimg.cn/20190311184846625.png" alt="在这里插入图片描述"><br>关键的地方我们已经找到了，既然这样的话现在就能用代码实现简单的单页应用了<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//html</span></span><br><span class="line">&lt;a href=<span class="string">"#singlepage"</span>&gt;单页SPA&lt;<span class="regexp">/a&gt;</span></span><br><span class="line"><span class="regexp">&lt;a href="#singlepage1"&gt;单页1&lt;/</span>a&gt;</span><br><span class="line">&lt;a href=<span class="string">"#singlepage2"</span>&gt;单页<span class="number">2</span>&lt;<span class="regexp">/a&gt;</span></span><br><span class="line"><span class="regexp">&lt;p id="singlepageId"&gt;&lt;/</span>p&gt;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//js</span></span><br><span class="line"><span class="comment">//监听onhashchange事件</span></span><br><span class="line"><span class="built_in">window</span>.onhashchange = <span class="function"><span class="keyword">function</span>(<span class="params">e</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> page = location.hash;</span><br><span class="line">  <span class="keyword">if</span> (page === <span class="string">"#singlepage"</span>) &#123;</span><br><span class="line">    <span class="built_in">document</span>.getElementById(<span class="string">"singlepageId"</span>).innerHTML = <span class="string">"这是单页SPA"</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (page === <span class="string">"#singlepage1"</span>) &#123;</span><br><span class="line">    <span class="built_in">document</span>.getElementById(<span class="string">"singlepageId"</span>).innerHTML = <span class="string">"这是单页1"</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;<span class="keyword">else</span> <span class="keyword">if</span> (page === <span class="string">"#singlepage2"</span>) &#123;</span><br><span class="line">    <span class="built_in">document</span>.getElementById(<span class="string">"singlepageId"</span>).innerHTML = <span class="string">"这是单页2"</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>hash实现起来和简单，无非就是监听url变化，将对应的内容嵌套进相应的内容组件。所以这也不是主流的单页面方法，其实目前使用最多的方法是H5的history方法，我们来浅谈下history的实现。</p>
+<h2 id="History"><a href="#History" class="headerlink" title="History"></a>History</h2><p><strong>属性</strong><br>length：该属性代表着浏览器历史列表中的URL数量。初始值为1，如果当前窗口先后访问了两个网址，那该属性的值变为2。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">history.length          <span class="comment">// 1  当前窗口1个网址</span></span><br><span class="line">history.length          <span class="comment">// 2  当前窗口2个网址</span></span><br></pre></td></tr></table></figure></p>
+<p><strong>方法</strong><br>go():传入number作为参数，页面会跳进History的url列表的相应位置<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.history.go(<span class="number">-1</span>)           <span class="comment">// 后退</span></span><br><span class="line"><span class="built_in">window</span>.history.go(<span class="number">1</span>)            <span class="comment">// 前进</span></span><br><span class="line"><span class="built_in">window</span>.history.go(<span class="number">0</span>)            <span class="comment">// 刷新</span></span><br><span class="line"><span class="built_in">window</span>.history.go()             <span class="comment">// 刷新</span></span><br></pre></td></tr></table></figure></p>
+<p>forward():可以加载历史列表中的下一个URL，类似于go(1)，实现了点击浏览器前进按钮的效果<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.history.forward()        <span class="comment">// 前进</span></span><br><span class="line"><span class="built_in">window</span>.history.go(<span class="number">1</span>)            <span class="comment">// 前进</span></span><br></pre></td></tr></table></figure></p>
+<p>back():可以加载历史列表中的上一个URL，类似于go(-1)，实现了点击浏览器后退按钮的效果<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.history.back()           <span class="comment">// 后退</span></span><br><span class="line"><span class="built_in">window</span>.history.go(<span class="number">-1</span>)           <span class="comment">// 后退</span></span><br></pre></td></tr></table></figure></p>
+<p>注意：当URL队列中没有上一个URL时，back方法会失效；同理，当URL队列中没有下一个URL时，forward方法会失效。</p>
+<p>HTML5提出了pushState(state,title,url)方法和replaceState(state,title,url) 方法，这两种方法可以向浏览器的历史栈中添加数据。<br>这两个新增方法都接接收3个参数</p>
+<ol>
+<li>state：一个与指定网址相关的状态对象，popstate事件触发时，该对象会传入回调函数。如果不需要这个对象（即不需要传参），可以设为null</li>
+<li>title：新页面的标题，但是大部分浏览器目前都忽略这个值，所以这里也可以设为null</li>
+<li>url：新的网址，必须与当前页处在同一域，浏览器的地址栏将显示这个网址</li>
+</ol>
+<p><strong>pushState</strong><br>pushState方法不会触发页面刷新，只是导致history对象发生变化，地址栏会有反应,只有当触发前进后退等事件（back()和forward()等）时浏览器才会刷新这里的。 url 是受到同源策略限制的，防止恶意脚本模仿其他网站 url 用来欺骗用户，所以当违背同源策略时将会报错。<br><strong>replaceState</strong><br>replaceState(stateObj, title, url) 和pushState的区别就在于它不是写入而是替换修改浏览历史中当前纪录，其余和 pushState一模一样。<br><strong>popstate()</strong><br>history模式在Vue中，vue-router每次需要跳转页面时，pushState()方法都会在历史记录中添加一条新的url，当用户点击前进、后退按钮，或者调用back、forward、go方法时会触发popstate()，popstate事件的state属性会包含一份来自history实体的state对象的拷贝，此时可以做一些相应的操作。</p>
+<p>总结来说就是pushState()改变浏览器url地址并携带state对象作为参数，url的变化会触发popstate(),并拿到state对象，然后做一些逻辑处理，代码如下：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&lt;a <span class="class"><span class="keyword">class</span></span>=<span class="string">"page demoA"</span>&gt;demoA.html&lt;<span class="regexp">/a&gt;</span></span><br><span class="line"><span class="regexp">&lt;a class="page demoB"&gt;demoB.html&lt;/</span>a&gt;</span><br><span class="line"> <span class="comment">// 注册路由</span></span><br><span class="line">  <span class="built_in">document</span>.querySelectorAll(<span class="string">'.page'</span>).forEach(<span class="function">(<span class="params">e,i</span>) =&gt;</span> &#123;</span><br><span class="line">   e.addEventListener(<span class="string">'click'</span>, item =&gt; &#123;</span><br><span class="line">    item .preventDefault();</span><br><span class="line">    <span class="keyword">let</span> link = e.textContent;</span><br><span class="line">    <span class="keyword">if</span> (!!(<span class="built_in">window</span>.history &amp;&amp; history.pushState)) &#123;</span><br><span class="line">     <span class="comment">// 支持History API</span></span><br><span class="line">     <span class="built_in">window</span>.history.pushState(&#123;<span class="attr">name</span>: <span class="string">'api'</span>&#125;, link, link);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">     <span class="comment">// 不支持,可使用一些Polyfill库来实现</span></span><br><span class="line">    &#125;</span><br><span class="line">   &#125;, <span class="literal">false</span>)</span><br><span class="line">  &#125;);</span><br><span class="line"> </span><br><span class="line">  <span class="comment">// 监听路由</span></span><br><span class="line">  <span class="built_in">window</span>.addEventListener(<span class="string">'popstate'</span>, e =&gt; &#123;</span><br><span class="line">   <span class="built_in">console</span>.log(&#123;</span><br><span class="line">    location: location.href,</span><br><span class="line">    state: e.state</span><br><span class="line">   &#125;)</span><br><span class="line">  &#125;, <span class="literal">false</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="附"><a href="#附" class="headerlink" title="附"></a>附</h2><p>该博客仅为记录开发中一些遇到的问题及解决方案，后续还会继续更新维护。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/27/vueSet/" rel="prev" title="vue.set（this.$set）的正确用法">
+                vue.set（this.$set）的正确用法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">PoloHuang</p>
+              <p class="site-description motion-element" itemprop="description">一个Polo</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景介绍"><span class="nav-number">1.</span> <span class="nav-text">背景介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">1.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hash"><span class="nav-number">1.2.</span> <span class="nav-text">Hash</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#History"><span class="nav-number">1.3.</span> <span class="nav-text">History</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附"><span class="nav-number">1.4.</span> <span class="nav-text">附</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PoloHuang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
