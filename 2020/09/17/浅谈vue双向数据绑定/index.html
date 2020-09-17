@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前沿最近在研究vue的源码，再次记录一下众所周知vue通过数据劫持+发布订阅模式实现双向绑定那么我们就一步一步来实现一个简易版本的mvvm吧 入口12345678910111213141516171819202122class Vue &amp;#123;    constructor(options) &amp;#123;        this.$el = options.el        this.$da">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈vue双向数据绑定">
+<meta property="og:url" content="http://yoursite.com/2020/09/17/浅谈vue双向数据绑定/index.html">
+<meta property="og:site_name" content="Polo">
+<meta property="og:description" content="前沿最近在研究vue的源码，再次记录一下众所周知vue通过数据劫持+发布订阅模式实现双向绑定那么我们就一步一步来实现一个简易版本的mvvm吧 入口12345678910111213141516171819202122class Vue &amp;#123;    constructor(options) &amp;#123;        this.$el = options.el        this.$da">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2020-09-17T02:24:23.083Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈vue双向数据绑定">
+<meta name="twitter:description" content="前沿最近在研究vue的源码，再次记录一下众所周知vue通过数据劫持+发布订阅模式实现双向绑定那么我们就一步一步来实现一个简易版本的mvvm吧 入口12345678910111213141516171819202122class Vue &amp;#123;    constructor(options) &amp;#123;        this.$el = options.el        this.$da">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/09/17/浅谈vue双向数据绑定/">
+
+
+
+
+
+  <title>浅谈vue双向数据绑定 | Polo</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Polo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">记录而已</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-首页">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-关于">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-归档">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/17/浅谈vue双向数据绑定/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="PoloHuang">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Polo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">浅谈vue双向数据绑定</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2020-09-17T10:09:04+08:00">
+                2020-09-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前沿"><a href="#前沿" class="headerlink" title="前沿"></a>前沿</h2><p>最近在研究vue的源码，再次记录一下<br>众所周知vue通过<strong>数据劫持+发布订阅模式</strong>实现双向绑定<br>那么我们就一步一步来实现一个简易版本的mvvm吧</p>
+<h4 id="入口"><a href="#入口" class="headerlink" title="入口"></a>入口</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Vue</span> </span>&#123;</span><br><span class="line">    <span class="keyword">constructor</span>(options) &#123;</span><br><span class="line">        <span class="keyword">this</span>.$el = options.el</span><br><span class="line">        <span class="keyword">this</span>.$data = options.data</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>.$el) &#123;</span><br><span class="line">            <span class="keyword">new</span> Observer(<span class="keyword">this</span>.$data)</span><br><span class="line">            <span class="keyword">new</span> Compiler(<span class="keyword">this</span>.$el, <span class="keyword">this</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 调用</span></span><br><span class="line"><span class="keyword">new</span> Vue(&#123;</span><br><span class="line">    el: <span class="string">'app'</span></span><br><span class="line">    data: &#123;</span><br><span class="line">        someStr: <span class="string">'hello '</span>,</span><br><span class="line">        school: &#123;</span><br><span class="line">            name: <span class="string">'test'</span>,</span><br><span class="line">            age: <span class="number">10</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>这里我们定义了一个<code>Vue</code>的class,通过<code>new Vue</code>将我们的数据传入其中，执行数据观测方法<code>Observer</code>和模板解析方法<code>Compiler</code> 我们先看<code>Observer</code></p>
+<h2 id="Observer"><a href="#Observer" class="headerlink" title="Observer"></a>Observer</h2><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span>(data) &#123;</span><br><span class="line">    <span class="keyword">this</span>.observe(data)</span><br><span class="line">  &#125;</span><br><span class="line">  observe(data) &#123;</span><br><span class="line">    <span class="keyword">if</span> (data &amp;&amp; <span class="keyword">typeof</span> data == <span class="string">'object'</span>) &#123;</span><br><span class="line">      <span class="built_in">Object</span>.keys(data).forEach(<span class="function"><span class="params">key</span> =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.defineReactive(data, key, data[key])</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  defineReactive(obj, key, value) &#123;</span><br><span class="line">      <span class="keyword">this</span>.observe(value)</span><br><span class="line">      <span class="keyword">let</span> dep = <span class="keyword">new</span> Dep()</span><br><span class="line">      <span class="built_in">Object</span>.defineProperty(obj, key, &#123;</span><br><span class="line">          <span class="keyword">get</span>() &#123;</span><br><span class="line">              <span class="built_in">console</span>.log(<span class="number">3333</span>)</span><br><span class="line"></span><br><span class="line">              <span class="built_in">console</span>.log(<span class="string">'Dep.target'</span>, Dep.target)</span><br><span class="line">              Dep.target &amp;&amp; dep.addSub(Dep.target)</span><br><span class="line">              <span class="keyword">return</span> value</span><br><span class="line">          &#125;,</span><br><span class="line">           <span class="keyword">set</span>: (newVal) =&gt; &#123;</span><br><span class="line">            <span class="keyword">if</span> (newVal !== value) &#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="number">4444</span>)</span><br><span class="line">                <span class="keyword">this</span>.observe(newVal)</span><br><span class="line">                value = newVal</span><br><span class="line">                dep.notify()</span><br><span class="line">            &#125;</span><br><span class="line">           &#125;</span><br><span class="line">      &#125;)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>observe方法主要是遍历整个对象，通过<code>Object.defineProperty</code>给<code>data</code>的每个属性都加上对应的<code>get</code>和<code>set</code>，如果对象的属性依然是对象，会进行递归调用，给属性加上<code>get</code>和<code>set</code></p>
+<h4 id="Compiler"><a href="#Compiler" class="headerlink" title="Compiler"></a>Compiler</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Compiler</span> </span>&#123;</span><br><span class="line">    <span class="keyword">constructor</span>(el, vm) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.el = <span class="keyword">this</span>.isElementNode(el) ? el : <span class="built_in">document</span>.querySelector(el)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 把当前节点中的元素放到内存中</span></span><br><span class="line">        <span class="keyword">let</span> fragment = <span class="keyword">this</span>.node2fragment(<span class="keyword">this</span>.el)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.vm = vm</span><br><span class="line"></span><br><span class="line">        <span class="comment">// console.log(fragment)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 编译模板 用数据编译</span></span><br><span class="line">        <span class="keyword">this</span>.compile(fragment)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// console.log(this.el)</span></span><br><span class="line">        <span class="keyword">this</span>.el.appendChild(fragment)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    isDirective(attrName) &#123;</span><br><span class="line">        <span class="keyword">return</span> attrName.indexOf(<span class="string">'v-'</span>) !== <span class="number">-1</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 编译元素的方法</span></span><br><span class="line">    compileElement(node) &#123;</span><br><span class="line">        <span class="keyword">let</span> attributes = node.attributes; <span class="comment">// 类数组</span></span><br><span class="line">        [...attributes].forEach(<span class="function"><span class="params">attr</span> =&gt;</span> &#123;</span><br><span class="line">            <span class="keyword">let</span> &#123;name, <span class="attr">value</span>: expr&#125; = attr</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isDirective(name)) &#123;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// console.log(name.split('-'))</span></span><br><span class="line">                <span class="keyword">let</span> [, directive] = name.split(<span class="string">'-'</span>)</span><br><span class="line">                CompileUtil[directive](node, expr, <span class="keyword">this</span>.vm)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 编译文本 找&#123;&#123;xxx&#125;&#125;</span></span><br><span class="line">    compileText(node) &#123;</span><br><span class="line">        <span class="keyword">let</span> content = node.textContent</span><br><span class="line">        <span class="keyword">if</span> (<span class="regexp">/\&#123;\&#123;(.+?)\&#125;\&#125;/g</span>.test(content)) &#123;</span><br><span class="line"></span><br><span class="line">        CompileUtil[<span class="string">'text'</span>](node, content, <span class="keyword">this</span>.vm)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 核心编译方法</span></span><br><span class="line">    compile(node) &#123;</span><br><span class="line">        <span class="keyword">let</span> childNodes = node.childNodes;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// console.log([...childNodes]);</span></span><br><span class="line">        [...childNodes].forEach(<span class="function"><span class="params">child</span> =&gt;</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isElementNode(child)) &#123;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// console.log('element', child)</span></span><br><span class="line">                <span class="keyword">this</span>.compileElement(child)</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 如果是元素的话，需要除去自己，再去遍历子节点</span></span><br><span class="line">                <span class="keyword">this</span>.compile(child)</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// console.log('text', child)</span></span><br><span class="line">                <span class="keyword">this</span>.compileText(child)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">    node2fragment(node) &#123;</span><br><span class="line">        <span class="keyword">let</span> fragment = <span class="built_in">document</span>.createDocumentFragment()</span><br><span class="line">        <span class="keyword">let</span> firstChild</span><br><span class="line">        <span class="comment">// eslint-disable-next-line no-cond-assign</span></span><br><span class="line">        <span class="keyword">while</span> (firstChild = node.firstChild) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// appendChild具有移动性</span></span><br><span class="line">            <span class="comment">// console.log(firstChild)</span></span><br><span class="line">            fragment.appendChild(firstChild)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> fragment</span><br><span class="line">    &#125;</span><br><span class="line">    isElementNode(node) &#123;</span><br><span class="line">        <span class="keyword">return</span> node.nodeType === <span class="number">1</span>          <span class="comment">// 元素</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CompileUtil 包含编译表达式和指令的方法</span></span><br><span class="line"><span class="keyword">const</span> CompileUtil = &#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 根据表达式取对应的数据</span></span><br><span class="line">  getVal(vm, expr) &#123;</span><br><span class="line">    <span class="keyword">return</span> expr.split(<span class="string">'.'</span>).reduce(<span class="function">(<span class="params">data, current</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> data[current]</span><br><span class="line">    &#125;, vm.$data)</span><br><span class="line">  &#125;,</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 根据表达式设置对应的数据</span></span><br><span class="line">  setVal(vm, expr, value) &#123;</span><br><span class="line">    expr.split(<span class="string">'.'</span>).reduce(<span class="function">(<span class="params">data, current, index, arr</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (index === arr.length - <span class="number">1</span>) &#123;</span><br><span class="line">        data[current] = value</span><br><span class="line"></span><br><span class="line">        <span class="comment">//  console.log(data[current])</span></span><br><span class="line">        <span class="keyword">return</span> data[current]</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> data[current]</span><br><span class="line">    &#125;, vm.$data)</span><br><span class="line">  &#125;,</span><br><span class="line"></span><br><span class="line">  getContentVal(vm, expr) &#123;</span><br><span class="line">    <span class="keyword">return</span> expr.replace(<span class="regexp">/\&#123;\&#123;(.+?)\&#125;\&#125;/g</span>, (...args) =&gt; &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.getVal(vm, args[<span class="number">1</span>])</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;,</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解析v-model指令</span></span><br><span class="line">  model(node, expr, vm) &#123;</span><br><span class="line">    <span class="keyword">let</span> fn = <span class="keyword">this</span>.updater[<span class="string">'modelUpdater'</span>]</span><br><span class="line">    <span class="keyword">new</span> Watcher(vm, expr, newVal =&gt; &#123;  <span class="comment">// 给输入框加一个观察者，稍后数据更新，触发此方法，用新值给输入框赋值</span></span><br><span class="line">      fn(node, newVal)</span><br><span class="line">    &#125;)</span><br><span class="line">    node.addEventListener(<span class="string">'input'</span>, e =&gt; &#123;</span><br><span class="line">      <span class="keyword">let</span> value = e.target.value</span><br><span class="line">      <span class="keyword">this</span>.setVal(vm, expr, value)</span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="keyword">let</span> value = <span class="keyword">this</span>.getVal(vm, expr)</span><br><span class="line">    <span class="built_in">console</span>.log(value)</span><br><span class="line">    fn(node, value)</span><br><span class="line">  &#125;,</span><br><span class="line"></span><br><span class="line">  html() &#123;&#125;,</span><br><span class="line"></span><br><span class="line">  text(node, expr, vm) &#123;</span><br><span class="line">    <span class="keyword">let</span> fn = <span class="keyword">this</span>.updater[<span class="string">'textUpdater'</span>]</span><br><span class="line">    <span class="built_in">console</span>.log(expr)</span><br><span class="line">    <span class="keyword">let</span> content = expr.replace(<span class="regexp">/\&#123;\&#123;(.*?)\&#125;\&#125;/g</span>, (...args) =&gt; &#123;</span><br><span class="line">      <span class="keyword">new</span> Watcher(vm, args[<span class="number">1</span>], () =&gt; &#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="keyword">this</span>.getContentVal(vm, expr))</span><br><span class="line">        fn(node, <span class="keyword">this</span>.getContentVal(vm, expr))</span><br><span class="line">      &#125;)</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.getVal(vm, args[<span class="number">1</span>])</span><br><span class="line">    &#125;)</span><br><span class="line">    fn(node, content)</span><br><span class="line">  &#125;,</span><br><span class="line"></span><br><span class="line">  updater: &#123;</span><br><span class="line">    modelUpdater(node, value) &#123;</span><br><span class="line">      node.value = value</span><br><span class="line">    &#125;,</span><br><span class="line">    textUpdater(node, value) &#123;</span><br><span class="line">      node.textContent = value</span><br><span class="line">    &#125;,</span><br><span class="line">    htmlUpdater(node, value) &#123;</span><br><span class="line">      node.innerHTML = value</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>Compiler</code>这个类比较复杂，不过其主要作用是解析模板，包括对<code></code>和<code>v-model</code>，<code>v-text</code>等vue表达式的编译，我这里只是简易版，源码比这个要复杂的多</p>
+<p>编译<code>文本</code>和<code>v-model</code>等指令的时候，会进行一个<code>new Watcher</code>的操作，这里设计的非常巧妙，完美的运用了<code>js</code>单线程的特点。也是这里，将我们的数据和视图做到关联，实现双向数据绑定<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Watcher</span> </span>&#123;</span><br><span class="line">    <span class="keyword">constructor</span>(vm, expr, cb) &#123;</span><br><span class="line">        <span class="keyword">this</span>.vm = vm</span><br><span class="line">        <span class="keyword">this</span>.expr = expr</span><br><span class="line">        <span class="keyword">this</span>.cb = cb</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.oldValue = <span class="keyword">this</span>.get()</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">get</span>() &#123;</span><br><span class="line">        Dep.target = <span class="keyword">this</span></span><br><span class="line">        <span class="built_in">console</span>.log(<span class="number">2222</span>)</span><br><span class="line">        <span class="keyword">let</span> value = CompileUtil.getVal(<span class="keyword">this</span>.vm, <span class="keyword">this</span>.expr)</span><br><span class="line">        Dep.target = <span class="literal">null</span></span><br><span class="line">        <span class="keyword">return</span> value</span><br><span class="line">    &#125;</span><br><span class="line">    update() &#123;</span><br><span class="line">        <span class="keyword">let</span> newVal = CompileUtil.getVal(<span class="keyword">this</span>.vm, <span class="keyword">this</span>.expr)</span><br><span class="line">        <span class="keyword">if</span> (newVal !== <span class="keyword">this</span>.oldValue) &#123;</span><br><span class="line">            <span class="keyword">this</span>.cb(newVal)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到wacher中会执行一个<code>get</code>方法去获取数据，在获取数据之前会将<code>实例watcher</code>赋值给<code>Dep.target</code>，取完值之后又将<code>Dep.target</code>置为null</p>
+<p>这里还要看一下之前的数据劫持：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">defineReactive(obj, key, value) &#123;</span><br><span class="line">    <span class="keyword">this</span>.observe(value)</span><br><span class="line">    <span class="keyword">let</span> dep = <span class="keyword">new</span> Dep()</span><br><span class="line">    <span class="built_in">Object</span>.defineProperty(obj, key, &#123;</span><br><span class="line">        <span class="keyword">get</span>() &#123;</span><br><span class="line">            Dep.target &amp;&amp; dep.addSub(Dep.target)</span><br><span class="line">            <span class="keyword">return</span> value</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="keyword">set</span>: (newVal) =&gt; &#123;</span><br><span class="line">            <span class="keyword">if</span> (newVal !== value) &#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="number">4444</span>)</span><br><span class="line">                <span class="keyword">this</span>.observe(newVal)</span><br><span class="line">                value = newVal</span><br><span class="line">                dep.notify()</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到每条数据都有一个对应的dep，get数据时，如果有<code>Dep.target</code>就将<code>Dep.target</code> push进dep数组，也就是将watcher添加进dep。set数据时，会执行<code>dep.notify()</code>执行对应的更新操作</p>
+<h4 id="Dep"><a href="#Dep" class="headerlink" title="Dep"></a>Dep</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">    <span class="keyword">constructor</span>() &#123;</span><br><span class="line">        <span class="keyword">this</span>.subs = []      <span class="comment">// 存储watcher</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 订阅 将属性的watcher添加进订阅器</span></span><br><span class="line">    addSub(watcher) &#123;</span><br><span class="line">        <span class="keyword">this</span>.subs.push(watcher)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 发布 执行watcher中的update方法，更新视图</span></span><br><span class="line">    notify() &#123;</span><br><span class="line">        <span class="keyword">this</span>.subs.forEach(<span class="function"><span class="params">watcher</span> =&gt;</span> watcher.update())</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><ol>
+<li>首先对数据进行observer数据劫持，利用Object.defineProperty给每个属性加上get(),set()</li>
+<li>之后会进行数据的解析，解析数据时(比如v-model时)给每条数据加上watcher，并将watcher对象赋值给Dep.target（发布订阅器target属性）数据解析渲染时触发get()，将watcher添加订阅</li>
+<li>当修改数据时，会触发set(), 此时会触发我们在set()中定义的dep.notify方法，循环更新watcher updata方法，形成数据驱动视图，mvvm模式</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/23/自己实现一个new方法/" rel="next" title="自己实现一个new方法">
+                <i class="fa fa-chevron-left"></i> 自己实现一个new方法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">PoloHuang</p>
+              <p class="site-description motion-element" itemprop="description">一个Polo</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前沿"><span class="nav-number">1.</span> <span class="nav-text">前沿</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#入口"><span class="nav-number">1.0.1.</span> <span class="nav-text">入口</span></a></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#Observer"><span class="nav-number">2.</span> <span class="nav-text">Observer</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Compiler"><span class="nav-number">2.0.1.</span> <span class="nav-text">Compiler</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Dep"><span class="nav-number">2.0.2.</span> <span class="nav-text">Dep</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">2.0.3.</span> <span class="nav-text">总结</span></a></li></ol></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PoloHuang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
